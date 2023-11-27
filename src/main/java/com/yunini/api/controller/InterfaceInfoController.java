@@ -140,19 +140,19 @@ public class InterfaceInfoController {
      *
      * @param interfaceInfoQueryRequest
      * @param request
-     * @return
      */
-    /*@PostMapping("/list/page/vo")
-    public BaseResponse<Page<InterfaceInfoVO>> listInterfaceInfoVOByPage(@RequestBody InterfaceInfoQueryRequest interfaceInfoQueryRequest,
-            HttpServletRequest request) {
-        long current = interfaceInfoQueryRequest.getCurrent();
+    @PostMapping("/list/page/vo")
+    public void listInterfaceInfoVOByPage(@RequestBody InterfaceInfoQueryRequest interfaceInfoQueryRequest,
+                                          HttpServletRequest request) {
+        /*long current = interfaceInfoQueryRequest.getCurrent();
         long size = interfaceInfoQueryRequest.getPageSize();
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         Page<InterfaceInfo> interfaceInfoPage = interfaceInfoService.page(new Page<>(current, size),
                 interfaceInfoService.getQueryWrapper(interfaceInfoQueryRequest));
         return ResultUtils.success(interfaceInfoService.getInterfaceInfoVOPage(interfaceInfoPage, request));
-    }*/
+    */
+    }
 
     /**
      * 分页获取当前用户创建的资源列表
