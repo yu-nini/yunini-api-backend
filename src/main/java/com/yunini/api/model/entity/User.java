@@ -45,6 +45,16 @@ public class User implements Serializable {
     private String mpOpenId;
 
     /**
+     * accessKey
+     */
+    private String accessKey;
+
+    /**
+     * secretKey
+     */
+    private String secretKey;
+
+    /**
      * 用户昵称
      */
     private String userName;

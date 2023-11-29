@@ -89,3 +89,7 @@ cos:
     secretKey: xxx
     region: xxx
     bucket: xxx
+yunini:
+  client:
+    secret: sk
+    access: ak

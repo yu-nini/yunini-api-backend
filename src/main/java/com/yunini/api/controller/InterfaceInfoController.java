@@ -3,6 +3,8 @@ package com.yunini.api.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.gson.Gson;
+import com.sdkclient.api.YuApiClientConfig;
+import com.sdkclient.api.cleint.YuniniApiClient;
 import com.yunini.api.annotation.AuthCheck;
 import com.yunini.api.common.*;
 import com.yunini.api.constant.CommonConstant;
@@ -15,8 +17,11 @@ import com.yunini.api.model.dto.interfaceinfo.InterfaceInfoQueryRequest;
 import com.yunini.api.model.dto.interfaceinfo.InterfaceInfoUpdateRequest;
 import com.yunini.api.model.entity.InterfaceInfo;
 import com.yunini.api.model.entity.User;
+import com.yunini.api.model.enums.InterfaceInfoStatusEnum;
 import com.yunini.api.service.InterfaceInfoService;
 import com.yunini.api.service.UserService;
+import io.netty.util.internal.StringUtil;
+import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -39,6 +44,8 @@ public class InterfaceInfoController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private YuApiClientConfig yuApiClientConfig;
     private final static Gson GSON = new Gson();
 
     // region 增删改查
@@ -259,73 +266,79 @@ public class InterfaceInfoController {
         if (oldInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
-       /* if (oldInterfaceInfo.getStatus() == InterfaceInfoStatusEnum.OFFLINE.getValue()) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "接口已关闭");
+        Integer status = oldInterfaceInfo.getStatus();
+        if (!(status == InterfaceInfoStatusEnum.ONLINE.getValue())){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
         }
         User loginUser = userService.getLoginUser(request);
-        String accessKey = loginUser.getAccessKey();
-        String secretKey = loginUser.getSecretKey();
-        YuApiClient tempClient = new YuApiClient(accessKey, secretKey);
-        Gson gson = new Gson();
-        com.yupi.yuapiclientsdk.model.User user = gson.fromJson(userRequestParams, com.yupi.yuapiclientsdk.model.User.class);
-        String usernameByPost = tempClient.getUserNameByGet(user);*/
-        return ResultUtils.success(null);
+        YuniniApiClient yuniniApiClient = new YuniniApiClient(loginUser.getAccessKey(),loginUser.getSecretKey());
+        com.sdkclient.api.model.User user = new com.sdkclient.api.model.User();
+        user.setName("yuninia");
+        String name = yuniniApiClient.postByName(user);
+        return ResultUtils.success(name);
     }
     /**
      * 发布（仅管理员）
      * @Param idRequest
      * @return
-     *//*
+     */
     @PostMapping("/online")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> onlineInterfaceInfo(@RequestBody IdRequest idRequest,HttpServletRequest request) {
-        if(idRequest == null || idRequest.getId() <= 0){
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        Long id = idRequest.getId();
+        //判断接口是否存在
+        InterfaceInfo interfaceInfo = interfaceInfoService.getById(id);
+        if (interfaceInfo == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"参数错误");
         }
-        long id = idRequest.getId();
-        // 判断是否存在
-        InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
-        if (oldInterfaceInfo == null){
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        //判断接口是否可以掉通
+        YuniniApiClient yuniniApiClient = yuApiClientConfig.yuniniApiClient();
+        com.sdkclient.api.model.User user = new com.sdkclient.api.model.User();
+        user.setName("xiaoxiao");
+        String result = yuniniApiClient.postByName(user);
+        if (StringUtil.isNullOrEmpty(result)){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"接口调不通！");
         }
-        //判断接口是否可以调用
-        com.yupi.yuapiclientsdk.model.User user = new com.yupi.yuapiclientsdk.model.User();
-        user.setUsername("test");
-        String username = user.getUsername();
-        String result = yuApiClient.getUserNameByGet(user);
-        if(StringUtils.isAnyBlank(username)){
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"接口验证失败");
-        }
-
-        InterfaceInfo interfaceInfo = new InterfaceInfo();
+        InterfaceInfo interfaceInfoNew = new InterfaceInfo();
         interfaceInfo.setId(id);
-        interfaceInfo.setStatus(InterfaceInfoStatusEnum.ONLINE.getValue());
-        boolean result1 = interfaceInfoService.updateById(interfaceInfo);
-        return ResultUtils.success(result1);
+        interfaceInfo.setStatus(InterfaceInfoStatusEnum.OFFLINE.getValue());
+        boolean b = interfaceInfoService.updateById(interfaceInfo);
+        if (!b){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"修改失败！");
+        }
+        return ResultUtils.success(b);
     }
-*/
+
     /**
      * 下线（仅管理员）
      *
      * @param idRequest
      * @return
-     *//*
+     */
     @PostMapping("/offline")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> offlioneInterfaceInfo(@RequestBody IdRequest idRequest,HttpServletRequest request) {
-        if(idRequest == null || idRequest.getId() <= 0){
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        Long id = idRequest.getId();
+        //判断接口是否存在
+        InterfaceInfo interfaceInfo = interfaceInfoService.getById(id);
+        if (interfaceInfo == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"参数错误");
         }
-        long id = idRequest.getId();
-        // 判断是否存在
-        InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
-        if (oldInterfaceInfo == null){
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
-        }
-        InterfaceInfo interfaceInfo = new InterfaceInfo();
+        /*//判断接口是否可以掉通
+        YuniniApiClient yuniniApiClient = yuApiClientConfig.yuniniApiClient();
+        com.sdkclient.api.model.User user = new com.sdkclient.api.model.User();
+        user.setName("xiaoxiao");
+        String result = yuniniApiClient.postByName(user);
+        if (StringUtil.isNullOrEmpty(result)){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"接口调不通！");
+        }*/
+        InterfaceInfo interfaceInfoNew = new InterfaceInfo();
         interfaceInfo.setId(id);
         interfaceInfo.setStatus(InterfaceInfoStatusEnum.OFFLINE.getValue());
-        boolean result1 = interfaceInfoService.updateById(interfaceInfo);
-        return ResultUtils.success(result1);
+        boolean b = interfaceInfoService.updateById(interfaceInfo);
+        if (!b){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"修改失败！");
+        }
+        return ResultUtils.success(b);
     }
-*/}
+}
