@@ -1,0 +1,14 @@
+server:
+  port: 7053
+yunini:
+  client:
+    access: ak
+    secret: sk
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: api_route
+          uri: http://localhost:7051
+          predicates:
+            - Path=/api/{yunini}
