@@ -1,8 +1,14 @@
-package com.yunini.gateway;
+package com.yunini.api;
 
 import com.sdkclient.api.cleint.YuniniApiClient;
 import com.sdkclient.api.utils.SignCreate;
+import com.yunini.apicommon.model.entity.InterfaceInfo;
+import com.yunini.apicommon.model.entity.User;
+import com.yunini.apicommon.service.InnerInterfaceInfoService;
+import com.yunini.apicommon.service.InnerUserInterfaceInfoService;
+import com.yunini.apicommon.service.InnerUserService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -37,6 +43,16 @@ public class CustomerGlobalFilter implements GlobalFilter {
     private static final String INTERFACE_HOST = "http://localhost:7053";
     @Resource
     private YuniniApiClient yuniniApiClient;
+
+    @DubboReference
+    private InnerUserService innerUserService;
+
+    @DubboReference
+    private InnerInterfaceInfoService innerInterfaceInfoService;
+
+    @DubboReference
+    private InnerUserInterfaceInfoService innerUserInterfaceInfoService;
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         //1、记录请求日志
@@ -49,7 +65,7 @@ public class CustomerGlobalFilter implements GlobalFilter {
         String hostString = request.getLocalAddress().getHostString();
         InetSocketAddress remoteAddress = request.getRemoteAddress();
         Flux<DataBuffer> bodyRequest = request.getBody();
-        HttpMethod method = request.getMethod();
+        String method = request.getMethod().toString();
         log.info("请求来源地址为"+ hostString);
         log.info("请求来源地址为："+remoteAddress);
         log.info("请求地址为："+INTERFACE_HOST+path);
@@ -67,12 +83,19 @@ public class CustomerGlobalFilter implements GlobalFilter {
         String body = headers.getFirst("body");
         String sign = headers.getFirst("sign");
         long timeMillis = System.currentTimeMillis()/100;
-        if (!"ak".equals(access)){
-            throw new RuntimeException("无权限！");
+        User invokeUser = null;
+        try {
+            invokeUser  = innerUserService.getInvokeUser(access);
+        }catch (Exception e){
+            log.error("GET USER ERROR");
         }
-        String realSign = SignCreate.getSign(body, "sk");
-        if (!realSign.equals(sign)){
-            throw new RuntimeException("无权限！");
+        if (invokeUser == null){
+            throw new RuntimeException("根据accessKey未找到用户！");
+        }
+        //根据sk获得签名，与请求头中的签名进行比较是否一致
+        String realSign = SignCreate.getSign(body, invokeUser.getSecretKey());
+        if (realSign == null || !realSign.equals(sign)){
+            throw new RuntimeException("用户签名不正确，无权限！");
         }
         Long time = Long.valueOf(timestamp);
         //不超过一分钟
@@ -80,11 +103,18 @@ public class CustomerGlobalFilter implements GlobalFilter {
             throw new RuntimeException("已过期！");
         }
         //4、请求的模拟接口是否存在
-        //todo 查询数据库接口是否存在
-        // todo 是否还有调用次数
+        InterfaceInfo interfaceInfo = null;
+        try{
+            interfaceInfo =
+                    innerInterfaceInfoService.getInterfaceInfo(INTERFACE_HOST+path, method);
+        }catch (Exception e){
+            log.error("接口不存在或接口查找错误！");
+        }
+        if (interfaceInfo == null) {
+            return handleNoAuth(response);
+        }
         // 5. 请求转发，调用模拟接口 + 响应日志
-
-        return handleResponse(exchange, chain, 1,1);
+        return handleResponse(exchange, chain, interfaceInfo.getId(),invokeUser.getId());
 
     }
 
@@ -117,7 +147,7 @@ public class CustomerGlobalFilter implements GlobalFilter {
                                     fluxBody.map(dataBuffer -> {
                                         // 7. 调用成功，接口调用次数 + 1 invokeCount
                                         try {
-                                            //innerUserInterfaceInfoService.invokeCount(interfaceInfoId, userId);
+                                            innerUserInterfaceInfoService.invokeCount(interfaceInfoId, userId);
                                         } catch (Exception e) {
                                             log.error("invokeCount error", e);
                                         }
@@ -149,5 +179,15 @@ public class CustomerGlobalFilter implements GlobalFilter {
             log.error("网关处理响应异常" + e);
             return chain.filter(exchange);
         }
+    }
+
+    public Mono<Void> handleNoAuth(ServerHttpResponse response) {
+        response.setStatusCode(HttpStatus.FORBIDDEN);
+        return response.setComplete();
+    }
+
+    public Mono<Void> handleInvokeError(ServerHttpResponse response) {
+        response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+        return response.setComplete();
     }
 }

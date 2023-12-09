@@ -4,9 +4,8 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONUtil;
-import com.sdkclient.api.model.RequestName;
-import com.sdkclient.api.model.User;
 import com.sdkclient.api.utils.SignCreate;
+import com.yunini.apicommon.model.entity.User;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,7 +45,7 @@ public class YuniniApiClient {
                 .addHeaders(setHeader(json))
                 .execute().body();
         System.out.println(result2);
-        return "POSTBYNAME 名字为"+user.getName();
+        return "POSTBYNAME 名字为"+user.getUserName();
     }
     public Map<String,String> setHeader(String body){
         Map<String,String> hashMap = new HashMap<>();

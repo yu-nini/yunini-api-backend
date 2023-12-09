@@ -6,12 +6,13 @@ import com.yunini.api.common.ErrorCode;
 import com.yunini.api.mapper.PostThumbMapper;
 import com.yunini.api.model.entity.Post;
 import com.yunini.api.model.entity.PostThumb;
-import com.yunini.api.model.entity.User;
 import com.yunini.api.service.PostThumbService;
 import com.yunini.api.exception.BusinessException;
 import com.yunini.api.service.PostService;
 
 import javax.annotation.Resource;
+
+import com.yunini.apicommon.model.entity.User;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

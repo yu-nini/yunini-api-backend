@@ -6,7 +6,6 @@ import com.yunini.api.common.DeleteRequest;
 import com.yunini.api.common.ErrorCode;
 import com.yunini.api.common.ResultUtils;
 import com.yunini.api.config.WxOpenConfig;
-import com.yunini.api.model.entity.User;
 import com.yunini.api.model.vo.LoginUserVO;
 import com.yunini.api.model.vo.UserVO;
 import com.yunini.api.annotation.AuthCheck;
@@ -24,18 +23,15 @@ import java.util.List;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import com.yunini.apicommon.model.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.bean.WxOAuth2UserInfo;
 import me.chanjar.weixin.common.bean.oauth2.WxOAuth2AccessToken;
 import me.chanjar.weixin.mp.api.WxMpService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 用户接口
@@ -45,6 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/user")
 @Slf4j
+@CrossOrigin(origins = {"http://localhost:8000"})
 public class UserController {
 
     @Resource
@@ -52,9 +49,6 @@ public class UserController {
 
     @Resource
     private WxOpenConfig wxOpenConfig;
-
-    // region 登录相关
-
     /**
      * 用户注册
      *

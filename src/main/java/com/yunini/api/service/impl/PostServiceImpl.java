@@ -13,7 +13,6 @@ import com.yunini.api.model.dto.post.PostQueryRequest;
 import com.yunini.api.model.entity.Post;
 import com.yunini.api.model.entity.PostFavour;
 import com.yunini.api.model.entity.PostThumb;
-import com.yunini.api.model.entity.User;
 import com.yunini.api.model.vo.PostVO;
 import com.yunini.api.model.vo.UserVO;
 import com.yunini.api.utils.SqlUtils;
@@ -31,6 +30,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+
+import com.yunini.apicommon.model.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;

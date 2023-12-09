@@ -8,7 +8,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yunini.api.common.ErrorCode;
 import com.yunini.api.mapper.UserMapper;
 import com.yunini.api.model.dto.user.UserQueryRequest;
-import com.yunini.api.model.entity.User;
 import com.yunini.api.model.enums.UserRoleEnum;
 import com.yunini.api.model.vo.LoginUserVO;
 import com.yunini.api.model.vo.UserVO;
@@ -19,9 +18,10 @@ import com.yunini.api.service.UserService;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
+
+import com.yunini.apicommon.model.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.bean.WxOAuth2UserInfo;
 import org.apache.commons.lang3.StringUtils;
@@ -68,9 +68,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号重复");
             }
             // 2. 加密
+            long timeMillis = System.currentTimeMillis() / 1000;
             String encryptPassword = DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
-            String accessKey = DigestUtils.md5DigestAsHex((SALT + userAccount).getBytes());
-            String secretKey = DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
+            String accessKey = DigestUtils.md5DigestAsHex((SALT + userAccount + timeMillis).getBytes());
+            String secretKey = DigestUtils.md5DigestAsHex((SALT + userPassword + timeMillis).getBytes());
             // 3. 插入数据
             User user = new User();
             user.setUserAccount(userAccount);
@@ -103,7 +104,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("userAccount", userAccount);
         queryWrapper.eq("userPassword", encryptPassword);
-        User user = this.baseMapper.selectOne(queryWrapper);
+        User user = this.getOne(queryWrapper);
         // 用户不存在
         if (user == null) {
             log.info("user login failed, userAccount cannot match userPassword");
@@ -131,8 +132,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             // 用户不存在则创建
             if (user == null) {
                 user = new User();
-                user.setUnionId(unionId);
-                user.setMpOpenId(mpOpenId);
                 user.setUserAvatar(wxOAuth2UserInfo.getHeadImgUrl());
                 user.setUserName(wxOAuth2UserInfo.getNickname());
                 boolean result = this.save(user);

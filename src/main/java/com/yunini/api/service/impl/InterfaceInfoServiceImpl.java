@@ -4,9 +4,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yunini.api.common.ErrorCode;
 import com.yunini.api.exception.BusinessException;
 import com.yunini.api.exception.ThrowUtils;
-import com.yunini.api.model.entity.InterfaceInfo;
 import com.yunini.api.service.InterfaceInfoService;
 import com.yunini.api.mapper.InterfaceInfoMapper;
+import com.yunini.apicommon.model.entity.InterfaceInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 

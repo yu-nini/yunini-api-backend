@@ -7,8 +7,20 @@ yunini:
 spring:
   cloud:
     gateway:
+      default-filters:
+        - AddResponseHeader=source, yunini
       routes:
         - id: api_route
           uri: http://localhost:7051
           predicates:
-            - Path=/api/{yunini}
+            - Path=/api/**
+#dubbo配置
+dubbo:
+  application:
+    name: dubbo-springboot-demo-consumer
+  protocol:
+    name: dubbo
+    port: -1
+  registry:
+    id: nacos-registry
+    address: nacos://localhost:8840

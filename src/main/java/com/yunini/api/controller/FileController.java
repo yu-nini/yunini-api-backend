@@ -6,7 +6,6 @@ import com.yunini.api.common.ErrorCode;
 import com.yunini.api.common.ResultUtils;
 import com.yunini.api.manager.CosManager;
 import com.yunini.api.model.dto.file.UploadFileRequest;
-import com.yunini.api.model.entity.User;
 import com.yunini.api.model.enums.FileUploadBizEnum;
 import com.yunini.api.constant.FileConstant;
 import com.yunini.api.exception.BusinessException;
@@ -15,6 +14,8 @@ import java.io.File;
 import java.util.Arrays;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+
+import com.yunini.apicommon.model.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.web.bind.annotation.PostMapping;

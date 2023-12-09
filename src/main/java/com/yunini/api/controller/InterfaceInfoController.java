@@ -15,13 +15,12 @@ import com.yunini.api.model.dto.interfaceinfo.InterfaceInfoAddRequest;
 import com.yunini.api.model.dto.interfaceinfo.InterfaceInfoInvokeRequest;
 import com.yunini.api.model.dto.interfaceinfo.InterfaceInfoQueryRequest;
 import com.yunini.api.model.dto.interfaceinfo.InterfaceInfoUpdateRequest;
-import com.yunini.api.model.entity.InterfaceInfo;
-import com.yunini.api.model.entity.User;
 import com.yunini.api.model.enums.InterfaceInfoStatusEnum;
 import com.yunini.api.service.InterfaceInfoService;
 import com.yunini.api.service.UserService;
+import com.yunini.apicommon.model.entity.InterfaceInfo;
+import com.yunini.apicommon.model.entity.User;
 import io.netty.util.internal.StringUtil;
-import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -272,8 +271,8 @@ public class InterfaceInfoController {
         }
         User loginUser = userService.getLoginUser(request);
         YuniniApiClient yuniniApiClient = new YuniniApiClient(loginUser.getAccessKey(),loginUser.getSecretKey());
-        com.sdkclient.api.model.User user = new com.sdkclient.api.model.User();
-        user.setName("yuninia");
+        User user = new User();
+        user.setUserName("yuninia");
         String name = yuniniApiClient.postByName(user);
         return ResultUtils.success(name);
     }
@@ -293,8 +292,8 @@ public class InterfaceInfoController {
         }
         //判断接口是否可以掉通
         YuniniApiClient yuniniApiClient = yuApiClientConfig.yuniniApiClient();
-        com.sdkclient.api.model.User user = new com.sdkclient.api.model.User();
-        user.setName("xiaoxiao");
+        User user = new User();
+        user.setUserName("xiaoxiao");
         String result = yuniniApiClient.postByName(user);
         if (StringUtil.isNullOrEmpty(result)){
             throw new BusinessException(ErrorCode.SYSTEM_ERROR,"接口调不通！");

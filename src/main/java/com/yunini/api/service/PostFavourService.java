@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yunini.api.model.entity.Post;
 import com.yunini.api.model.entity.PostFavour;
-import com.yunini.api.model.entity.User;
+import com.yunini.apicommon.model.entity.User;
 
 /**
  * 帖子收藏服务

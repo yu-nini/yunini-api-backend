@@ -8,7 +8,6 @@ import com.yunini.api.model.dto.post.PostQueryRequest;
 import com.yunini.api.model.dto.postfavour.PostFavourAddRequest;
 import com.yunini.api.model.dto.postfavour.PostFavourQueryRequest;
 import com.yunini.api.model.entity.Post;
-import com.yunini.api.model.entity.User;
 import com.yunini.api.model.vo.PostVO;
 import com.yunini.api.exception.BusinessException;
 import com.yunini.api.exception.ThrowUtils;
@@ -17,6 +16,8 @@ import com.yunini.api.service.PostService;
 import com.yunini.api.service.UserService;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+
+import com.yunini.apicommon.model.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

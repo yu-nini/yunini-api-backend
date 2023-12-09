@@ -1,13 +1,14 @@
 package com.yunini.api.aop;
 
 import com.yunini.api.common.ErrorCode;
-import com.yunini.api.model.entity.User;
 import com.yunini.api.model.enums.UserRoleEnum;
 import com.yunini.api.annotation.AuthCheck;
 import com.yunini.api.exception.BusinessException;
 import com.yunini.api.service.UserService;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+
+import com.yunini.apicommon.model.entity.User;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

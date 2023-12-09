@@ -1,7 +1,7 @@
 package com.yunini.api.service;
 
-import com.yunini.api.model.entity.UserInterfaceInfo;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.yunini.apicommon.model.entity.UserInterfaceInfo;
 
 /**
  *
@@ -16,6 +16,6 @@ public interface UserInterfaceInfoService extends IService<UserInterfaceInfo> {
     /**
      * 每次调用调用次数加1
      */
-    boolean setCount(long userId,long interfaceId);
+    boolean invokeCount(long userId,long interfaceId);
 
 }

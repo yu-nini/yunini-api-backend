@@ -42,6 +42,11 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.example</groupId>
+            <artifactId>yunini-api-common</artifactId>
+            <version>1.0.1</version>
+        </dependency>
     </dependencies>
 
 

@@ -1,7 +1,7 @@
 package com.yunini.api.service;
 
-import com.yunini.api.model.entity.InterfaceInfo;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.yunini.apicommon.model.entity.InterfaceInfo;
 
 /**
  *

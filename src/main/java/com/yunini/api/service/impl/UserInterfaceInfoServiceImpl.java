@@ -6,11 +6,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yunini.api.common.ErrorCode;
 import com.yunini.api.exception.BusinessException;
 import com.yunini.api.mapper.UserInterfaceInfoMapper;
-import com.yunini.api.model.entity.UserInterfaceInfo;
 import com.yunini.api.service.UserInterfaceInfoService;
+import com.yunini.apicommon.model.entity.UserInterfaceInfo;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.Resource;
 
 /**
  *
@@ -18,8 +16,6 @@ import javax.annotation.Resource;
 @Service
 public class UserInterfaceInfoServiceImpl extends ServiceImpl<UserInterfaceInfoMapper, UserInterfaceInfo>
     implements UserInterfaceInfoService{
-    @Resource
-    private UserInterfaceInfoService userInterfaceInfoService;
 
     @Override
     public void validInterfaceInfo(UserInterfaceInfo userInterfaceInfo, boolean add) {
@@ -38,7 +34,7 @@ public class UserInterfaceInfoServiceImpl extends ServiceImpl<UserInterfaceInfoM
     }
 
     @Override
-    public boolean setCount(long userId, long interfaceInfoId) {
+    public boolean invokeCount(long userId, long interfaceInfoId) {
         boolean result = true;
         if (userId <= 0 || interfaceInfoId <= 0){
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"参数错误！");
@@ -62,12 +58,13 @@ public class UserInterfaceInfoServiceImpl extends ServiceImpl<UserInterfaceInfoM
             updateWrapper.ge("leftNum",0);
             updateWrapper.eq("userId",userId);
             updateWrapper.eq("interfaceInfoId",interfaceInfoId);
-            result = userInterfaceInfoService.update(updateWrapper);
+            updateWrapper.setSql("leftNum = leftNum - 1, totalNum = totalNum + 1\"");
+            result = this.update(updateWrapper);
             if (!result){
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR,"用户剩余次数为零");
             }
         }
-        return result;
+        return true;
     }
 }
 

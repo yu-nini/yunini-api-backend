@@ -9,11 +9,12 @@ import com.yunini.api.common.ErrorCode;
 import com.yunini.api.mapper.PostFavourMapper;
 import com.yunini.api.model.entity.Post;
 import com.yunini.api.model.entity.PostFavour;
-import com.yunini.api.model.entity.User;
 import com.yunini.api.exception.BusinessException;
 import com.yunini.api.service.PostFavourService;
 import com.yunini.api.service.PostService;
 import javax.annotation.Resource;
+
+import com.yunini.apicommon.model.entity.User;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

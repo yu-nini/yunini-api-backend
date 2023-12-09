@@ -1,8 +1,8 @@
 package com.yunini.api.service;
 
-import com.yunini.api.model.entity.User;
-
 import javax.annotation.Resource;
+
+import com.yunini.apicommon.model.entity.User;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

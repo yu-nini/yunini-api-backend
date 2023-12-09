@@ -11,7 +11,6 @@ import com.yunini.api.model.dto.post.PostEditRequest;
 import com.yunini.api.model.dto.post.PostQueryRequest;
 import com.yunini.api.model.dto.post.PostUpdateRequest;
 import com.yunini.api.model.entity.Post;
-import com.yunini.api.model.entity.User;
 import com.yunini.api.model.vo.PostVO;
 import com.yunini.api.annotation.AuthCheck;
 import com.yunini.api.constant.UserConstant;
@@ -22,6 +21,8 @@ import com.yunini.api.service.UserService;
 import java.util.List;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+
+import com.yunini.apicommon.model.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.GetMapping;
