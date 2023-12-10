@@ -25,7 +25,7 @@ public class YuniniApiClient {
         HashMap<String, Object> paramMap = new HashMap<>();
         paramMap.put("name",name);
 
-        String result3= HttpUtil.get("http://localhost:7051/api/user/", paramMap);
+        String result3= HttpUtil.get("http://localhost:7053/api/user/", paramMap);
         System.out.println(result3);
         return "GET 获得的名称为"+name;
     }
@@ -33,14 +33,14 @@ public class YuniniApiClient {
     public String postName(String name){
         HashMap<String, Object> paramMap = new HashMap<>();
         paramMap.put("name", name);
-        String result= HttpUtil.post("http://localhost:7051/api/user/", paramMap);
+        String result= HttpUtil.post("http://localhost:7053/api/user/", paramMap);
         return "POST 获得的名字为"+name;
     }
 
 
     public String postByName(User user){
         String json = JSONUtil.toJsonStr(user);
-        String result2 = HttpRequest.post("http://localhost:7051/api/user/name")
+        String result2 = HttpRequest.post("http://localhost:7053/api/user/name")
                 .body(json)
                 .addHeaders(setHeader(json))
                 .execute().body();

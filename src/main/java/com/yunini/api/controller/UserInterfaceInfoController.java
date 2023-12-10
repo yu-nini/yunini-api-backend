@@ -10,20 +10,28 @@ import com.yunini.api.constant.CommonConstant;
 import com.yunini.api.constant.UserConstant;
 import com.yunini.api.exception.BusinessException;
 import com.yunini.api.exception.ThrowUtils;
+import com.yunini.api.mapper.UserInterfaceInfoMapper;
 import com.yunini.api.model.dto.interfaceinfo.InterfaceInfoAddRequest;
 import com.yunini.api.model.dto.interfaceinfo.InterfaceInfoQueryRequest;
 import com.yunini.api.model.dto.interfaceinfo.InterfaceInfoUpdateRequest;
+import com.yunini.api.model.vo.InterfaceInfoVO;
+import com.yunini.api.service.InterfaceInfoService;
 import com.yunini.api.service.UserInterfaceInfoService;
 import com.yunini.api.service.UserService;
+import com.yunini.apicommon.model.entity.InterfaceInfo;
 import com.yunini.apicommon.model.entity.User;
 import com.yunini.apicommon.model.entity.UserInterfaceInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 用户接口管理
@@ -39,6 +47,11 @@ public class UserInterfaceInfoController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private InterfaceInfoService interfaceInfoService;
+
+    @Resource
+    private UserInterfaceInfoMapper userInterfaceInfoMapper;
     @Resource
     private YuApiClientConfig yuApiClientConfig;
     private final static Gson GSON = new Gson();
@@ -184,5 +197,27 @@ public class UserInterfaceInfoController {
                 sortOrder.equals(CommonConstant.SORT_ORDER_DESC), sortField);
         Page<UserInterfaceInfo> interfaceInfoPage = userinterfaceInfoService.page(new Page<>(current, size), queryWrapper);
         return ResultUtils.success(interfaceInfoPage);
+    }
+
+    @GetMapping("/top/interface/invoke")
+    @AuthCheck(mustRole = "admin")
+    public BaseResponse<List<InterfaceInfoVO>> listTopInvokeInterfaceInfo() {
+        List<UserInterfaceInfo> userInterfaceInfoList = userInterfaceInfoMapper.listTopInvokeInterfaceInfo(3);
+        Map<Long, List<UserInterfaceInfo>> interfaceInfoIdObjMap = userInterfaceInfoList.stream()
+                .collect(Collectors.groupingBy(UserInterfaceInfo::getInterfaceInfoId));
+        QueryWrapper<InterfaceInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.in("id", interfaceInfoIdObjMap.keySet());
+        List<InterfaceInfo> list = interfaceInfoService.list(queryWrapper);
+        if (CollectionUtils.isEmpty(list)) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+        }
+        List<InterfaceInfoVO> interfaceInfoVOList = list.stream().map(interfaceInfo -> {
+            InterfaceInfoVO interfaceInfoVO = new InterfaceInfoVO();
+            BeanUtils.copyProperties(interfaceInfo, interfaceInfoVO);
+            int totalNum = interfaceInfoIdObjMap.get(interfaceInfo.getId()).get(0).getTotalNum();
+            interfaceInfoVO.setTotalNum(totalNum);
+            return interfaceInfoVO;
+        }).collect(Collectors.toList());
+        return ResultUtils.success(interfaceInfoVOList);
     }
 }

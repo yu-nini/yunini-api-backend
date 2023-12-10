@@ -103,3 +103,6 @@ dubbo:
   registry:
     id: nacos-registry
     address: nacos://localhost:8840
+spring-boot:
+  run:
+    jvm-properties=-Xmx1024m

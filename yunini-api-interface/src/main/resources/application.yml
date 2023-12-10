@@ -2,7 +2,6 @@ server:
   port: 7051
   servlet:
     context-path: /api
-yunini:
-  client:
-    access: ak
-    secret: sk
+spring-boot:
+  run:
+    jvm-properties = -Xmx1024m
