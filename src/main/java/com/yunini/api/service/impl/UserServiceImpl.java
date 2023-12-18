@@ -2,11 +2,13 @@ package com.yunini.api.service.impl;
 
 import static com.yunini.api.constant.UserConstant.USER_LOGIN_STATE;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yunini.api.common.ErrorCode;
 import com.yunini.api.mapper.UserMapper;
+import com.yunini.api.model.dto.user.UserAddRequest;
 import com.yunini.api.model.dto.user.UserQueryRequest;
 import com.yunini.api.model.enums.UserRoleEnum;
 import com.yunini.api.model.vo.LoginUserVO;
@@ -21,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
+import com.yunini.api.utils.UserHolder;
 import com.yunini.apicommon.model.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.bean.WxOAuth2UserInfo;
@@ -111,7 +114,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户不存在或密码错误");
         }
         // 3. 记录用户的登录态
+        UserAddRequest userAddRequest = BeanUtil.copyProperties(user, UserAddRequest.class);
         request.getSession().setAttribute(USER_LOGIN_STATE, user);
+        UserHolder.saveUser(userAddRequest);
         return this.getLoginUserVO(user);
     }
 

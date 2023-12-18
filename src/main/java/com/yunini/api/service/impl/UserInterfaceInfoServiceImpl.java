@@ -54,11 +54,14 @@ public class UserInterfaceInfoServiceImpl extends ServiceImpl<UserInterfaceInfoM
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR,"用户调用接口关系表新建数据错误");
             }
         }else{
+            if (userInterfaceInfo.getLeftNum() <= 0){
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR,"该用户没有调用次数，请充值");
+            }
             UpdateWrapper<UserInterfaceInfo> updateWrapper = new UpdateWrapper<>();
             updateWrapper.ge("leftNum",0);
             updateWrapper.eq("userId",userId);
             updateWrapper.eq("interfaceInfoId",interfaceInfoId);
-            updateWrapper.setSql("leftNum = leftNum - 1, totalNum = totalNum + 1\"");
+            updateWrapper.setSql("leftNum = leftNum - 1, totalNum = totalNum + 1");
             result = this.update(updateWrapper);
             if (!result){
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR,"用户剩余次数为零");

@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 import com.sdkclient.api.YuApiClientConfig;
 import com.sdkclient.api.cleint.YuniniApiClient;
 import com.yunini.api.annotation.AuthCheck;
+import com.yunini.api.annotation.AuthOrMemberCheck;
 import com.yunini.api.common.*;
 import com.yunini.api.constant.CommonConstant;
 import com.yunini.api.constant.UserConstant;
@@ -15,9 +16,12 @@ import com.yunini.api.model.dto.interfaceinfo.InterfaceInfoAddRequest;
 import com.yunini.api.model.dto.interfaceinfo.InterfaceInfoInvokeRequest;
 import com.yunini.api.model.dto.interfaceinfo.InterfaceInfoQueryRequest;
 import com.yunini.api.model.dto.interfaceinfo.InterfaceInfoUpdateRequest;
+import com.yunini.api.model.dto.user.UserAddRequest;
 import com.yunini.api.model.enums.InterfaceInfoStatusEnum;
+import com.yunini.api.model.enums.UserRoleEnum;
 import com.yunini.api.service.InterfaceInfoService;
 import com.yunini.api.service.UserService;
+import com.yunini.api.utils.UserHolder;
 import com.yunini.apicommon.model.entity.InterfaceInfo;
 import com.yunini.apicommon.model.entity.User;
 import io.netty.util.internal.StringUtil;
@@ -28,6 +32,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 
 /**
  * 接口管理
@@ -46,24 +53,20 @@ public class InterfaceInfoController {
     @Resource
     private YuApiClientConfig yuApiClientConfig;
     private final static Gson GSON = new Gson();
-
-    // region 增删改查
-
     /**
      * 创建
-     *
      * @param interfaceInfoAddRequest
      * @param request
      * @return
      */
     @PostMapping("/add")
+    @AuthOrMemberCheck(mustRole = UserConstant.MEMBER_ROLE)
     public BaseResponse<Long> addInterfaceInfo(@RequestBody InterfaceInfoAddRequest interfaceInfoAddRequest, HttpServletRequest request) {
         if (interfaceInfoAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         InterfaceInfo interfaceInfo = new InterfaceInfo();
         BeanUtils.copyProperties(interfaceInfoAddRequest, interfaceInfo);
-
         interfaceInfoService.validInterfaceInfo(interfaceInfo, true);
         User loginUser = userService.getLoginUser(request);
         interfaceInfo.setUserId(loginUser.getId());
@@ -81,6 +84,7 @@ public class InterfaceInfoController {
      * @return
      */
     @PostMapping("/delete")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> deleteInterfaceInfo(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -246,7 +250,7 @@ public class InterfaceInfoController {
         return ResultUtils.success(result);
     }*/
     /**
-     * 测试调用
+     * 测试调用接口
      *
      * @param interfaceInfoInvokeRequest
      * @param request
@@ -269,12 +273,43 @@ public class InterfaceInfoController {
         if (!(status == InterfaceInfoStatusEnum.ONLINE.getValue())){
             throw new BusinessException(ErrorCode.SYSTEM_ERROR);
         }
-        User loginUser = userService.getLoginUser(request);
-        YuniniApiClient yuniniApiClient = new YuniniApiClient(loginUser.getAccessKey(),loginUser.getSecretKey());
+        //User loginUser = userService.getLoginUser(request);
+        //YuniniApiClient yuniniApiClient = new YuniniApiClient(loginUser.getAccessKey(),loginUser.getSecretKey());
         User user = new User();
         user.setUserName("yuninia");
-        String name = yuniniApiClient.postByName(user);
-        return ResultUtils.success(name);
+        //String name = yuniniApiClient.postByName(user);
+        Gson gson = new Gson();
+        String userStr = gson.toJson(user);
+        Object interfaceSDK = getInterfaceSDK("com.sdkclient.api.cleint.YuniniApiClient", "postByName", userStr
+                , "ak", "sk");
+        return ResultUtils.success(interfaceSDK);
+    }
+
+    public Object getInterfaceSDK(String url,String methodName,String requestParam,
+                                  String access,String secret){
+        try{
+            Class<?> clazz = Class.forName(url);
+            Constructor<?> constructor = clazz.getConstructor(String.class, String.class);
+            Object apiclient = constructor.newInstance(access, secret);
+            Method[] methods = clazz.getMethods();
+            for (Method method:methods) {
+                if (methodName.equals(method.getName())){
+                    Class<?>[] parameterTypes = method.getParameterTypes();
+                    if (parameterTypes.length == 0){
+                        Object invoke = method.invoke(apiclient);
+                        return invoke;
+                    }
+                    Gson gson = new Gson();
+                    Object parameter = gson.fromJson(requestParam, parameterTypes[0]);
+                    Object invoke = method.invoke(apiclient, parameter);
+                    return invoke;
+                }
+            }
+            return null;
+        }catch (Exception e){
+            e.printStackTrace();
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"获取SDK错误！");
+        }
     }
     /**
      * 发布（仅管理员）

@@ -12,6 +12,7 @@ import org.apache.dubbo.config.annotation.DubboReference;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -37,13 +38,7 @@ import java.util.List;
 
 @Slf4j
 @Component
-public class CustomerGlobalFilter implements GlobalFilter {
-    public static final List<String> LOCAL_HOST = Arrays.asList("127.0.0.1");
-
-    private static final String INTERFACE_HOST = "http://localhost:7053";
-    @Resource
-    private YuniniApiClient yuniniApiClient;
-
+public class CustomerGlobalFilter implements GlobalFilter , Ordered {
     @DubboReference
     private InnerUserService innerUserService;
 
@@ -53,68 +48,79 @@ public class CustomerGlobalFilter implements GlobalFilter {
     @DubboReference
     private InnerUserInterfaceInfoService innerUserInterfaceInfoService;
 
+    private static final List<String> IP_WHITE_LIST = Arrays.asList("127.0.0.1");
+
+    private static final String INTERFACE_HOST = "http://localhost:7053";
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        //1、记录请求日志
+        // 1. 请求日志
         ServerHttpRequest request = exchange.getRequest();
-        ServerHttpResponse response = exchange.getResponse();
-        HttpHeaders headers = request.getHeaders();
-        String id = request.getId();
-        RequestPath path = request.getPath();
-        MultiValueMap<String, String> queryParams = request.getQueryParams();
-        String hostString = request.getLocalAddress().getHostString();
-        InetSocketAddress remoteAddress = request.getRemoteAddress();
-        Flux<DataBuffer> bodyRequest = request.getBody();
+        String path = INTERFACE_HOST + request.getPath().value();
         String method = request.getMethod().toString();
-        log.info("请求来源地址为"+ hostString);
-        log.info("请求来源地址为："+remoteAddress);
-        log.info("请求地址为："+INTERFACE_HOST+path);
-        log.info("请求方法为"+method);
-        log.info("请求参数为"+queryParams);
-        //2、黑白名单
-        if (LOCAL_HOST.equals(hostString)){
+        log.info("请求唯一标识：" + request.getId());
+        log.info("请求路径：" + path);
+        log.info("请求方法：" + method);
+        log.info("请求参数：" + request.getQueryParams());
+        String sourceAddress = request.getLocalAddress().getHostString();
+        log.info("请求来源地址：" + sourceAddress);
+        log.info("请求来源地址：" + request.getRemoteAddress());
+        ServerHttpResponse response = exchange.getResponse();
+        // 2. 访问控制 - 黑白名单
+        if (!IP_WHITE_LIST.contains(sourceAddress)) {
             response.setStatusCode(HttpStatus.FORBIDDEN);
             return response.setComplete();
         }
-        //3、用户鉴权
-        String access = headers.getFirst("access");
-        String random = headers.getFirst("random");
-        String timestamp = headers.getFirst("timeStamp");
-        String body = headers.getFirst("body");
+        // 3. 用户鉴权（判断 ak、sk 是否合法）
+        HttpHeaders headers = request.getHeaders();
+        String accessKey = headers.getFirst("access");
+        String nonce = headers.getFirst("nonce");
+        String timestamp = headers.getFirst("timestamp");
         String sign = headers.getFirst("sign");
-        long timeMillis = System.currentTimeMillis()/100;
+        String body = headers.getFirst("body");
+        // todo 实际情况应该是去数据库中查是否已分配给用户
         User invokeUser = null;
         try {
-            invokeUser  = innerUserService.getInvokeUser(access);
-        }catch (Exception e){
-            log.error("GET USER ERROR");
+            invokeUser = innerUserService.getInvokeUser(accessKey);
+        } catch (Exception e) {
+            log.error("getInvokeUser error", e);
         }
-        if (invokeUser == null){
-            throw new RuntimeException("根据accessKey未找到用户！");
+        if (invokeUser == null) {
+            return handleNoAuth(response);
         }
-        //根据sk获得签名，与请求头中的签名进行比较是否一致
-        String realSign = SignCreate.getSign(body, invokeUser.getSecretKey());
-        if (realSign == null || !realSign.equals(sign)){
-            throw new RuntimeException("用户签名不正确，无权限！");
+//        if (!"yupi".equals(accessKey)) {
+//            return handleNoAuth(response);
+//        }
+       /* if (Long.parseLong(nonce) > 10000L) {
+            return handleNoAuth(response);
+        }*/
+        // 时间和当前时间不能超过 5 分钟
+        Long currentTime = System.currentTimeMillis() / 1000;
+        final Long FIVE_MINUTES = 60 * 5L;
+        if ((currentTime - Long.parseLong(timestamp)) >= FIVE_MINUTES) {
+            return handleNoAuth(response);
         }
-        Long time = Long.valueOf(timestamp);
-        //不超过一分钟
-        if ((timeMillis-time) > 600){
-            throw new RuntimeException("已过期！");
+        // 实际情况中是从数据库中查出 secretKey
+        String secretKey = invokeUser.getSecretKey();
+        String serverSign = SignCreate.getSign(body, secretKey);
+        if (sign == null || !sign.equals(serverSign)) {
+            return handleNoAuth(response);
         }
-        //4、请求的模拟接口是否存在
+        // 4. 请求的模拟接口是否存在，以及请求方法是否匹配
         InterfaceInfo interfaceInfo = null;
-        try{
-            interfaceInfo =
-                    innerInterfaceInfoService.getInterfaceInfo(INTERFACE_HOST+path, method);
-        }catch (Exception e){
-            log.error("接口不存在或接口查找错误！");
+        try {
+            interfaceInfo = innerInterfaceInfoService.getInterfaceInfo(path, method);
+        } catch (Exception e) {
+            log.error("getInterfaceInfo error", e);
         }
         if (interfaceInfo == null) {
             return handleNoAuth(response);
         }
+        // todo 是否还有调用次数
         // 5. 请求转发，调用模拟接口 + 响应日志
-        return handleResponse(exchange, chain, interfaceInfo.getId(),invokeUser.getId());
+        //        Mono<Void> filter = chain.filter(exchange);
+        //        return filter;
+        return handleResponse(exchange, chain, interfaceInfo.getId(), invokeUser.getId());
 
     }
 
@@ -141,7 +147,7 @@ public class CustomerGlobalFilter implements GlobalFilter {
                         log.info("body instanceof Flux: {}", (body instanceof Flux));
                         if (body instanceof Flux) {
                             Flux<? extends DataBuffer> fluxBody = Flux.from(body);
-                            // 往返回值里写数据
+                            // 往返回值里写数
                             // 拼接字符串
                             return super.writeWith(
                                     fluxBody.map(dataBuffer -> {
@@ -179,6 +185,11 @@ public class CustomerGlobalFilter implements GlobalFilter {
             log.error("网关处理响应异常" + e);
             return chain.filter(exchange);
         }
+    }
+
+    @Override
+    public int getOrder() {
+        return -1;
     }
 
     public Mono<Void> handleNoAuth(ServerHttpResponse response) {
